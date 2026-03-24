@@ -1,0 +1,2 @@
+webView.getSettings().setJavaScriptEnabled(true);
+webView.loadUrl("TU_LINK_DE_GITHUB");
