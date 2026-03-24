@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zenit System PRO</title>
+
+<style>
+body {margin:0;font-family:Segoe UI;background:#0f172a;color:white;}
+header {background:#1e293b;padding:12px;text-align:center;font-weight:bold;}
+nav {display:flex;overflow-x:auto;background:#020617;}
+nav button{flex:1;padding:10px;background:none;color:white;border:none;}
+.active{background:#22c55e;}
+.container{padding:10px;}
+.card{background:#1e293b;padding:12px;border-radius:12px;margin-bottom:10px;}
+input,textarea{width:100%;padding:8px;border-radius:8px;border:none;margin-top:5px;}
+button.action{background:#22c55e;border:none;padding:10px;border-radius:8px;width:100%;margin-top:5px;}
+.task{display:flex;justify-content:space-between;background:#334155;padding:8px;border-radius:8px;margin-top:5px;}
+.done{text-decoration:line-through;opacity:0.6;}
+.xpbar{background:#334155;height:10px;border-radius:10px;}
+.xpfill{height:10px;background:#22c55e;width:0%;}
+img{width:100%;border-radius:10px;}
+</style>
+</head>
+
+<body>
+
+<header>🚀 Zenit System PRO</header>
+
+<nav>
+<button onclick="tab('home')">Inicio</button>
+<button onclick="tab('tasks')">Tareas</button>
+<button onclick="tab('ai')">IA</button>
+<button onclick="tab('money')">Dinero</button>
+<button onclick="tab('media')">Media</button>
+<button onclick="tab('community')">Comunidad</button>
+</nav>
+
+<div class="container">
+
+<div id="home" class="card">
+<h3>Marca</h3>
+<input type="file" id="logo">
+<img id="logoView">
+
+<h3>Nivel</h3>
+<p id="nivel"></p>
+<div class="xpbar"><div id="xp" class="xpfill"></div></div>
+</div>
+
+<div id="tasks" class="card" style="display:none">
+<h3>Tareas</h3>
+<input id="taskInput">
+<button class="action" onclick="addTask()">Agregar</button>
+<div id="list"></div>
+</div>
+
+<div id="ai" class="card" style="display:none">
+<h3>IA</h3>
+<textarea id="aiInput"></textarea>
+<button class="action" onclick="ai()">Responder</button>
+<p id="aiOut"></p>
+<button onclick="openAI()">Abrir ChatGPT</button>
+<button onclick="openGemini()">Abrir Gemini</button>
+</div>
+
+<div id="money" class="card" style="display:none">
+<h3>Ingresos</h3>
+<p id="mission"></p>
+<button class="action" onclick="mission()">Nueva misión</button>
+<button onclick="calendar()">Agregar a calendario</button>
+</div>
+
+<div id="media" class="card" style="display:none">
+<h3>Videos</h3>
+<input type="file" id="videoInput" accept="video/*">
+<div id="videos"></div>
+</div>
+
+<div id="community" class="card" style="display:none">
+<h3>Comunidad</h3>
+<textarea id="post"></textarea>
+<button onclick="post()">Publicar</button>
+<div id="feed"></div>
+</div>
+
+</div>
+
+<script>
+
+// SEGURIDAD BÁSICA
+function clean(text){return text.replace(/[<>]/g,"");}
+
+// TABS
+function tab(id){
+ document.querySelectorAll('.card').forEach(e=>e.style.display='none');
+ document.getElementById(id).style.display='block';
+}
+
+// XP
+let xp = parseInt(localStorage.getItem("xp")||0);
+function updateXP(){
+ let lvl=Math.floor(xp/10);
+ document.getElementById("nivel").innerText="Nivel "+lvl;
+ document.getElementById("xp").style.width=(xp%10)*10+"%";
+ localStorage.setItem("xp",xp);
+}
+
+// TAREAS
+function addTask(){
+ let t=clean(taskInput.value);
+ if(!t)return;
+ let tasks=JSON.parse(localStorage.getItem("tasks")||"[]");
+ tasks.push({t,done:false});
+ localStorage.setItem("tasks",JSON.stringify(tasks));
+ loadTasks();
+}
+function toggle(i){
+ let tasks=JSON.parse(localStorage.getItem("tasks"));
+ tasks[i].done=!tasks[i].done;
+ if(tasks[i].done) xp++;
+ localStorage.setItem("tasks",JSON.stringify(tasks));
+ updateXP(); loadTasks();
+}
+function loadTasks(){
+ let list=document.getElementById("list"); list.innerHTML="";
+ let tasks=JSON.parse(localStorage.getItem("tasks")||"[]");
+ tasks.forEach((t,i)=>{
+ let d=document.createElement("div");
+ d.className="task "+(t.done?"done":"");
+ d.innerHTML=`${t.t}<button onclick="toggle(${i})">✔</button>`;
+ list.appendChild(d);
+ });
+}
+
+// IA LOCAL
+function ai(){
+ let q=aiInput.value.toLowerCase();
+ let r="Actúa hoy.";
+ if(q.includes("dinero")) r="Vende algo hoy.";
+ if(q.includes("disciplina")) r="Elimina distracciones.";
+ aiOut.innerText=r;
+}
+
+// LINKS IA
+function openAI(){window.open("https://chat.openai.com");}
+function openGemini(){window.open("https://gemini.google.com");}
+
+// DINERO
+function mission(){
+ let m=["Vender producto","Publicar video","Buscar cliente"];
+ mission.innerText=m[Math.random()*m.length|0];
+}
+
+// CALENDARIO ICS
+function calendar(){
+ let text="BEGIN:VCALENDAR\nBEGIN:VEVENT\nSUMMARY:Zenit Mision\nEND:VEVENT\nEND:VCALENDAR";
+ let blob=new Blob([text],{type:"text/calendar"});
+ let a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="mision.ics";
+ a.click();
+}
+
+// VIDEOS
+videoInput.onchange=()=>{
+ let file=videoInput.files[0];
+ let url=URL.createObjectURL(file);
+ let v=document.createElement("video");
+ v.src=url; v.controls=true;
+ videos.appendChild(v);
+}
+
+// COMUNIDAD
+function post(){
+ let p=clean(document.getElementById("post").value);
+ let arr=JSON.parse(localStorage.getItem("feed")||"[]");
+ arr.push(p);
+ localStorage.setItem("feed",JSON.stringify(arr));
+ loadFeed();
+}
+function loadFeed(){
+ let feed=document.getElementById("feed"); feed.innerHTML="";
+ let arr=JSON.parse(localStorage.getItem("feed")||"[]");
+ arr.forEach(p=>{
+ let d=document.createElement("div");
+ d.className="task";
+ d.innerText=p;
+ feed.appendChild(d);
+ });
+}
+
+// LOGO
+logo.onchange=e=>{
+ let r=new FileReader();
+ r.onload=()=>{
+  logoView.src=r.result;
+  localStorage.setItem("logo",r.result);
+ }
+ r.readAsDataURL(e.target.files[0]);
+}
+
+// INIT
+window.onload=()=>{
+ if(localStorage.getItem("logo")) logoView.src=localStorage.getItem("logo");
+ loadTasks(); updateXP(); loadFeed();
+}
+</script>
+
+</body>
+</html>
